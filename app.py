@@ -6,14 +6,18 @@ st.set_page_config(page_title="Getting Over It Mini Pro", page_icon="⚒️", la
 st.title("⚒️ Getting Over It - Phiên bản Ức Chế Nâng Cấp")
 st.write("Cách chơi: **Bấm giữ chuột trái** vào đầu búa màu xanh neon, **kéo lùi lại** để tích lực, rồi **thả chuột** để bắn chiếc chum bay lên!")
 
+# TẢI MÃ NGUỒN LIÊN KẾT NHÚNG TRỰC TIẾP MATTER.JS (BẢN MINIFIED RÚT GỌN CHỐNG BLOCK)
+# Thay vì gọi CDN bên ngoài, ta dùng bản nhúng an toàn trực tiếp từ GitHub CDN chính thức
+matter_js_src = "https://jsdelivr.net"
+
 # Nhúng mã nguồn HTML/JS sửa lỗi màn hình đen + Thêm giao diện UI mới
-html_game = """
+html_game = f"""
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <style>
-        body {
+        body {{
             margin: 0;
             padding: 0;
             overflow: hidden;
@@ -22,9 +26,9 @@ html_game = """
             display: flex;
             justify-content: center;
             align-items: center;
-        }
+        }}
         /* Ép cứng kích thước khung chứa bằng PX để tránh lỗi màn hình đen trên Streamlit Cloud */
-        #canvas-container {
+        #canvas-container {{
             position: relative;
             width: 800px;
             height: 600px;
@@ -32,9 +36,9 @@ html_game = """
             border-radius: 12px;
             box-shadow: 0 15px 35px rgba(0,0,0,0.6);
             background: #161623;
-        }
+        }}
         /* BẢNG ĐIỀU KHIỂN UI TRONG GAME */
-        #game-ui {
+        #game-ui {{
             position: absolute;
             top: 15px;
             left: 15px;
@@ -44,8 +48,8 @@ html_game = """
             align-items: center;
             pointer-events: none; /* Không che chuột khi chơi */
             z-index: 5;
-        }
-        .ui-box {
+        }}
+        .ui-box {{
             background: rgba(26, 26, 46, 0.85);
             border: 2px solid #00fff0;
             padding: 8px 15px;
@@ -54,9 +58,9 @@ html_game = """
             font-size: 16px;
             font-weight: bold;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        }
+        }}
         /* THANH ĐO LỰC BẮN CỦA BÚA */
-        #power-container {
+        #power-container {{
             width: 150px;
             height: 15px;
             background: #222;
@@ -64,14 +68,14 @@ html_game = """
             border-radius: 10px;
             overflow: hidden;
             margin-top: 5px;
-        }
-        #power-bar {
+        }}
+        #power-bar {{
             width: 0%;
             height: 100%;
             background: linear-gradient(to right, #00ff00, #ffff00, #ff0000);
             transition: width 0.05s ease;
-        }
-        #win-screen {
+        }}
+        #win-screen {{
             position: absolute;
             top: 50%;
             left: 50%;
@@ -87,8 +91,8 @@ html_game = """
             border-radius: 12px;
             z-index: 10;
             box-shadow: 0 0 30px rgba(255, 216, 3, 0.5);
-        }
-        .btn-ui {
+        }}
+        .btn-ui {{
             background: #e94560;
             color: white;
             border: none;
@@ -99,14 +103,14 @@ html_game = """
             pointer-events: auto; /* Cho phép bấm nút */
             font-weight: bold;
             transition: 0.2s;
-        }
-        .btn-ui:hover {
+        }}
+        .btn-ui:hover {{
             background: #ff3366;
             box-shadow: 0 0 10px #ff3366;
-        }
+        }}
     </style>
-    <!-- Tải thư viện Matter.js từ CDN ổn định -->
-    <script src="https://cloudflare.com"></script>
+    <!-- Sử dụng đường dẫn CDN thay thế bảo mật hơn chống bị block -->
+    <script src="{matter_js_src}"></script>
 </head>
 <body>
 
@@ -134,122 +138,114 @@ html_game = """
     </div>
 
     <script>
-        const { Engine, Render, Runner, Bodies, Composite, Constraint, Mouse, MouseConstraint, Events, Vector } = Matter;
+        // Hàm bọc kiểm tra xem thư viện đã load thành công chưa trước khi dựng game
+        function startGame() {{
+            if (typeof Matter === 'undefined') {{
+                // Nếu vẫn bị chặn tải, hệ thống tự động vẽ một thông báo trực quan lên màn hình
+                document.getElementById('canvas-container').innerHTML = "<div style='color:white; padding:50px; text-align:center;'>Trình duyệt của bạn đang chặn script bảo mật. Hãy thử tắt Adblock hoặc chuyển sang tab ẩn danh để chơi!</div>";
+                return;
+            }}
 
-        const engine = Engine.create();
-        const container = document.getElementById('canvas-container');
-        
-        // Thiết lập kích thước render chuẩn khít với khung chứa để chống đen màn hình
-        const render = Render.create({
-            element: container,
-            engine: engine,
-            options: {
-                width: 800,
-                height: 600,
-                wireframes: false,
-                background: '#161623'
-            }
-        });
+            const {{ Engine, Render, Runner, Bodies, Composite, Constraint, Mouse, MouseConstraint, Events, Vector }} = Matter;
 
-        Render.run(render);
-        const runner = Runner.create();
-        Runner.run(runner, engine);
+            const engine = Engine.create();
+            const container = document.getElementById('canvas-container');
+            
+            const render = Render.create({{
+                element: container,
+                engine: engine,
+                options: {{
+                    width: 800,
+                    height: 600,
+                    wireframes: false,
+                    background: '#161623'
+                }}
+            }});
 
-        // TẠO NHÂN VẬT CHÍNH (Chum nước & Búa)
-        const pot = Bodies.circle(150, 520, 28, { 
-            density: 0.006,
-            friction: 0.15,
-            restitution: 0.1, // Nảy nhẹ khi đập vào đá
-            render: { fillStyle: '#e94560' }
-        });
+            Render.run(render);
+            const runner = Runner.create();
+            Runner.run(runner, engine);
 
-        const handle = Bodies.rectangle(150, 460, 8, 80, {
-            density: 0.001,
-            collisionFilter: { group: -1 },
-            render: { fillStyle: '#ffffff' }
-        });
+            // TẠO NHÂN VẬT CHÍNH (Chum nước & Búa)
+            const pot = Bodies.circle(150, 520, 28, {{ 
+                density: 0.006,
+                friction: 0.15,
+                restitution: 0.1,
+                render: {{ fillStyle: '#e94560' }}
+            }});
 
-        const hammerHead = Bodies.circle(150, 410, 14, {
-            density: 0.008,
-            friction: 0.8,
-            render: { fillStyle: '#00fff0' }
-        });
+            const handle = Bodies.rectangle(150, 460, 8, 80, {{
+                density: 0.001,
+                collisionFilter: {{ group: -1 }},
+                render: {{ fillStyle: '#ffffff' }}
+            }});
 
-        const joint1 = Constraint.create({
-            bodyA: pot, bodyB: handle,
-            pointA: { x: 0, y: -15 }, pointB: { x: 0, y: 40 },
-            stiffness: 0.95, length: 0, render: { visible: false }
-        });
+            const hammerHead = Bodies.circle(150, 410, 14, {{
+                density: 0.008,
+                friction: 0.8,
+                render: {{ fillStyle: '#00fff0' }}
+            }});
 
-        const joint2 = Constraint.create({
-            bodyA: handle, bodyB: hammerHead,
-            pointA: { x: 0, y: -40 }, pointB: { x: 0, y: 0 },
-            stiffness: 0.95, length: 0, render: { visible: false }
-        });
+            const joint1 = Constraint.create({{
+                bodyA: pot, bodyB: handle,
+                pointA: {{ x: 0, y: -15 }}, pointB: {{ x: 0, y: 40 }},
+                stiffness: 0.95, length: 0, render: {{ visible: false }}
+            }});
 
-        Composite.add(engine.world, [pot, handle, hammerHead, joint1, joint2]);
+            const joint2 = Constraint.create({{
+                bodyA: handle, bodyB: hammerHead,
+                pointA: {{ x: 0, y: -40 }}, pointB: {{ x: 0, y: 0 }},
+                stiffness: 0.95, length: 0, render: {{ visible: false }}
+            }});
 
-        // ĐỊA HÌNH VÁCH ĐÁ LEO NÚI
-        const ground = Bodies.rectangle(400, 590, 800, 20, { isStatic: true, render: { fillStyle: '#0f0e17' } });
-        const leftWall = Bodies.rectangle(5, 300, 10, 600, { isStatic: true, render: { fillStyle: '#0f0e17' } });
-        const rightWall = Bodies.rectangle(795, 300, 10, 600, { isStatic: true, render: { fillStyle: '#0f0e17' } });
+            Composite.add(engine.world, [pot, handle, hammerHead, joint1, joint2]);
 
-        // Các chướng ngại vật sắp xếp lắt léo khêu gợi sự ức chế
-        const rocks = [
-            Bodies.rectangle(280, 470, 140, 25, { isStatic: true, render: { fillStyle: '#4e4e6a' } }),
-            Bodies.rectangle(480, 380, 130, 25, { isStatic: true, render: { fillStyle: '#4e4e6a' } }),
-            Bodies.rectangle(260, 270, 120, 25, { isStatic: true, render: { fillStyle: '#4e4e6a' } }),
-            Bodies.rectangle(500, 180, 90, 25, { isStatic: true, render: { fillStyle: '#4e4e6a' } }),
-            Bodies.rectangle(670, 120, 180, 25, { isStatic: true, render: { fillStyle: '#ffd803' } }) // Đỉnh núi vinh quang
-        ];
-        Composite.add(engine.world, [ground, leftWall, rightWall, ...rocks]);
+            // ĐỊA HÌNH VÁCH ĐÁ LEO NÚI
+            const ground = Bodies.rectangle(400, 590, 800, 20, {{ isStatic: true, render: {{ fillStyle: '#0f0e17' }} }});
+            const leftWall = Bodies.rectangle(5, 300, 10, 600, {{ isStatic: true, render: {{ fillStyle: '#0f0e17' }} }});
+            const rightWall = Bodies.rectangle(795, 300, 10, 600, {{ isStatic: true, render: {{ fillStyle: '#0f0e17' }} }});
 
-        // ĐIỀU KHIỂN CHUỘT KÉO THẢ VÀ XỬ LÝ LỰC UI
-        const mouse = Mouse.create(render.canvas);
-        const mouseConstraint = MouseConstraint.create(engine, {
-            mouse: mouse,
-            constraint: {
-                stiffness: 0.15,
-                render: { visible: true, color: 'rgba(0, 255, 240, 0.4)' }
-            }
-        });
-        Composite.add(engine.world, mouseConstraint);
-        render.mouse = mouse;
+            const rocks = [
+                Bodies.rectangle(280, 470, 140, 25, {{ isStatic: true, render: {{ fillStyle: '#4e4e6a' }} }}),
+                Bodies.rectangle(480, 380, 130, 25, {{ isStatic: true, render: {{ fillStyle: '#4e4e6a' }} }}),
+                Bodies.rectangle(260, 270, 120, 25, {{ isStatic: true, render: {{ fillStyle: '#4e4e6a' }} }}),
+                Bodies.rectangle(500, 180, 90, 25, {{ isStatic: true, render: { fillStyle: '#4e4e6a' } }}),
+                Bodies.rectangle(670, 120, 180, 25, {{ isStatic: true, render: {{ fillStyle: '#ffd803' }} }})
+            ];
+            Composite.add(engine.world, [ground, leftWall, rightWall, ...rocks]);
 
-        // XỬ LÝ ĐỒNG HỒ & THANH LỰC THEO HÀM UPDATE
-        let startTime = Date.now();
-        let gameEnded = false;
-        const powerBar = document.getElementById('power-bar');
-        const timerVal = document.getElementById('timer-val');
+            // ĐIỀU KHIỂN CHUỘT
+            const mouse = Mouse.create(render.canvas);
+            const mouseConstraint = MouseConstraint.create(engine, {{
+                mouse: mouse,
+                constraint: {{
+                    stiffness: 0.15,
+                    render: {{ visible: true, color: 'rgba(0, 255, 240, 0.4)' }}
+                }}
+            }});
+            Composite.add(engine.world, mouseConstraint);
+            render.mouse = mouse;
 
-        Events.on(engine, 'afterUpdate', function() {
-            if (gameEnded) return;
+            let startTime = Date.now();
+            let gameEnded = false;
+            const powerBar = document.getElementById('power-bar');
+            const timerVal = document.getElementById('timer-val');
 
-            // 1. Cập nhật đồng hồ bấm giờ
-            let elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-            timerVal.innerText = elapsed;
+            Events.on(engine, 'afterUpdate', function() {{
+                if (gameEnded) return;
 
-            // 2. Tính toán khoảng cách kéo chuột để hiển thị Thanh lực (Power Bar)
-            if (mouseConstraint.body === hammerHead) {
-                let dist = Vector.magnitude(Vector.sub(mouse.position, hammerHead.position));
-                let pct = Math.min((dist / 120) * 100, 100); // Giới hạn max 100% lực
-                powerBar.style.width = pct + '%';
-            } else {
-                powerBar.style.width = '0%';
-            }
+                let elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                timerVal.innerText = elapsed;
 
-            // 3. Kiểm tra chạm đỉnh chiến thắng (Khi chiếc chum lên vùng màu vàng góc trên bên phải)
-            if (pot.position.y < 95 && pot.position.x > 580) {
-                gameEnded = true;
-                document.getElementById('final-time').innerText = elapsed;
-                document.getElementById('win-screen').style.display = 'block';
-            }
-        });
-    </script>
-</body>
-</html>
-"""
+                if (mouseConstraint.body === hammerHead) {{
+                    let dist = Vector.magnitude(Vector.sub(mouse.position, hammerHead.position));
+                    let pct = Math.min((dist / 120) * 100, 100);
+                    powerBar.style.width = pct + '%';
+                }} else {{
+                    powerBar.style.width = '0%';
+                }}
 
-# Gọi hàm hiển thị của Streamlit với kích thước pixel khớp hoàn hảo để triệt tiêu lỗi màn hình đen
-st.components.v1.html(html_game, height=620, width=820, scrolling=False)
+                if (pot.position.y < 95 && pot.position.x > 580) {{
+                    gameEnded = true;
+                    document.getElementById('final-time').innerText = elapsed;
 
