@@ -1,12 +1,12 @@
 import streamlit as st
 
-# Cấu hình giao diện Streamlit Cloud
+# Cấu hình giao diện Streamlit Cloud công khai
 st.set_page_config(page_title="Getting Over It Native", page_icon="⚒️", layout="centered")
 
-st.title("⚒️ Getting Over It - Phiên Bản Rê Chuột Tự Động 🚀")
-st.write("Cách chơi: Nhấn **PLAY** để bắt đầu. **Chỉ cần di chuyển chuột trên màn hình** (không cần bấm nút), cây búa sẽ tự động tì vào các vách đá xám để đẩy người đi!")
+st.title("⚒️ Getting Over It - Phiên Bản Sửa Lỗi Hệ Thống 🚀")
+st.write("Cách chơi: Nhấn **PLAY** để bắt đầu. **Chỉ cần di chuyển chuột trên màn hình**, cây búa sẽ tự động xoay và tì bẩy cơ thể bạn bay lên cao!")
 
-# Game HTML5 Canvas nâng cấp nhân vật con người và cơ chế di chuột tự do
+# KHÔNG DÙNG F-STRING ĐỂ TRÁNH XUNG ĐỘT NGOẶC NHỌN VỚI JAVASCRIPT
 html_game = """
 <!DOCTYPE html>
 <html>
@@ -35,7 +35,7 @@ html_game = """
         canvas {
             display: block;
             border-radius: 8px;
-            cursor: crosshair; /* Thay đổi con trỏ chuột trong vùng chơi */
+            cursor: crosshair;
         }
         #ui-overlay {
             position: absolute;
@@ -129,7 +129,7 @@ html_game = """
     <div id="canvas-container">
         <div id="start-screen">
             <h1>GETTING OVER IT MINI</h1>
-            <p>CƠ CHẾ MỚI: Chỉ cần di chuyển con trỏ chuột, chiếc búa trên tay người leo núi sẽ tự động xoay và tì bẩy cơ thể bay lên cao!</p>
+            <p>CƠ CHẾ RÊ CHUỘT TỰ ĐỘNG: Chỉ cần di chuyển con trỏ chuột, chiếc búa trên tay người leo núi áo cam sẽ tự động tì vào các vách đá xám và đẩy cơ thể phóng lên!</p>
             <button class="btn-play" onclick="startGame()">PLAY 🎮</button>
         </div>
 
@@ -155,17 +155,14 @@ html_game = """
         let gameEnded = false;
         let startTime = 0;
 
-        // Cấu trúc nhân vật hình CON NGƯỜI
         let player = {
             x: 150, y: 500,
             vx: 0, vy: 0,
-            height: 50, // Chiều cao cơ thể người
-            width: 20,  // Độ rộng thân người
+            radius: 20,
             hammerAngle: -Math.PI/2,
             hammerLength: 75
         };
 
-        // Địa hình vách đá
         const rocks = [
             { x: 0, y: 580, w: 800, h: 20, color: '#0f0e17' },
             { x: 260, y: 460, w: 160, h: 25, color: '#4e4e6a' },
@@ -175,30 +172,28 @@ html_game = """
             { x: 650, y: 110, w: 150, h: 25, color: '#ffd803' }
         ];
 
-        function startGame() {
+        // KÍCH HOẠT KHI NHẤN NÚT PLAY
+        window.startGame = function() {
             startScreen.style.display = 'none';
             uiOverlay.style.display = 'block';
             isPlaying = true;
             startTime = Date.now();
-        }
+        };
 
-        // THAY ĐỔI LỚN: Tự động cập nhật góc búa CHỈ CẦN DI CHUỘT (Không cần click)
         canvas.addEventListener('mousemove', (e) => {
             if (!isPlaying || gameEnded) return;
             const rect = canvas.getBoundingClientRect();
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
 
-            // Góc búa tính từ ngực/tay nhân vật (player.x, player.y - 20)
             player.hammerAngle = Math.atan2(mouseY - (player.y - 20), mouseX - player.x);
             
             let hx = player.x + Math.cos(player.hammerAngle) * player.hammerLength;
             let hy = (player.y - 20) + Math.sin(player.hammerAngle) * player.hammerLength;
 
-            // Kiểm tra đầu búa chạm đá để tự tạo lực đẩy liên tục
             rocks.forEach(rock => {
                 if (hx >= rock.x && hx <= rock.x + rock.w && hy >= rock.y && hy <= rock.y + rock.h) {
-                    player.vx -= Math.cos(player.hammerAngle) * 0.95; // Tạo lực đẩy phản lực sinh động
+                    player.vx -= Math.cos(player.hammerAngle) * 0.95;
                     player.vy -= Math.sin(player.hammerAngle) * 0.95;
                 }
             });
@@ -207,17 +202,16 @@ html_game = """
         function update() {
             if (!isPlaying || gameEnded) return;
 
-            player.vy += 0.28; // Trọng lực nặng hơn một chút tăng độ khó
+            player.vy += 0.28; 
             player.vx *= 0.97;
             player.vy *= 0.97;
 
             player.x += player.vx;
             player.y += player.vy;
 
-            // Xử lý va chạm thân người với vách đá
             rocks.forEach(rock => {
                 if (player.x + 15 > rock.x && player.x - 15 < rock.x + rock.w &&
-                    player.y > rock.y && player.y - player.themeHeight < rock.y + rock.h) {
+                    player.y > rock.y && player.y - 40 < rock.y + rock.h) {
                     
                     player.y = rock.y;
                     player.vy = -player.vy * 0.1;
@@ -225,7 +219,6 @@ html_game = """
                 }
             });
 
-            // Giới hạn biên màn hình không cho người bay ra ngoài
             if (player.x < 20) { player.x = 20; player.vx = 0; }
             if (player.x > 780) { player.x = 780; player.vx = 0; }
             if (player.y > 580) { player.y = 580; player.vy = 0; }
@@ -233,7 +226,6 @@ html_game = """
             let elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
             timerEl.innerText = elapsed;
 
-            // Chạm đỉnh vàng chiến thắng
             if (player.y < 130 && player.x > 640) {
                 gameEnded = true;
                 document.getElementById('final-time').innerText = elapsed;
@@ -241,11 +233,9 @@ html_game = """
             }
         }
 
-        // VẼ ĐỒ HỌA HÌNH CON NGƯỜI
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 1. Vẽ các vách đá địa hình
             rocks.forEach(rock => {
                 ctx.fillStyle = rock.color;
                 ctx.fillRect(rock.x, rock.y, rock.w, rock.h);
@@ -254,11 +244,9 @@ html_game = """
                 ctx.strokeRect(rock.x, rock.y, rock.w, rock.h);
             });
 
-            // Định vị ngực người để vẽ tay và cán búa
             let chestX = player.x;
             let chestY = player.y - 25;
 
-            // 2. Vẽ chiếc búa leo núi
             let hx = chestX + Math.cos(player.hammerAngle) * player.hammerLength;
             let hy = chestY + Math.sin(player.hammerAngle) * player.hammerLength;
 
@@ -269,15 +257,43 @@ html_game = """
             ctx.lineWidth = 4;
             ctx.stroke();
 
-            // Vẽ đầu búa lớn hình chữ T
             ctx.save();
             ctx.translate(hx, hy);
             ctx.rotate(player.hammerAngle + Math.PI/2);
             ctx.fillStyle = '#00fff0';
-            ctx.fillRect(-12, -4, 24, 8); // Lưỡi búa nằm ngang
+            ctx.fillRect(-12, -4, 24, 8);
             ctx.restore();
 
-            // 3. VẼ MÔ HÌNH CON NGƯỜI (Bằng các nét hình học đơn giản)
-            // Vẽ Đầu con người
+            // Vẽ đầu người
             ctx.beginPath();
+            ctx.arc(player.x, player.y - 45, 10, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffdbac';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
 
+            // Vẽ thân người (Áo cam)
+            ctx.fillStyle = '#ff5722';
+            ctx.fillRect(player.x - 8, player.y - 35, 16, 25);
+            ctx.strokeStyle = '#fff';
+            ctx.strokeRect(player.x - 8, player.y - 35, 16, 25);
+
+            // Vẽ chân quần co gối (Màu xanh)
+            ctx.fillStyle = '#3f51b5';
+            ctx.fillRect(player.x - 8, player.y - 10, 16, 10);
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
+"""
+
+# Render mã HTML chuẩn hóa hoàn chỉnh lên Streamlit Cloud
